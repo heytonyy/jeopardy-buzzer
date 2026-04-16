@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Environment variables (real secrets)
+.env
+.env.local
+.env.*.local
+client/.env
+
+# SQLite database (may contain hashed passwords and session data)
+*.db
+*.db-shm
+*.db-wal
+
+# Build output
+dist/
+build/
+.vite/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# Claude Code (local permissions/settings, machine-specific)
+.claude/settings.local.json
+
+# JWT / secret artifacts
+*.pem
+*.key

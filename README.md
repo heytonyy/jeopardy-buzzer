@@ -46,8 +46,8 @@ A real-time classroom buzzer system built with React, Node.js, Socket.IO, and SQ
 
 1. Open [http://localhost:5173/login](http://localhost:5173/login)
 2. Log in with:
-   - **Username:** `teacher` (or whatever you set in `.env`)
-   - **Password:** `jeopardy123` (or whatever you set in `.env`)
+   - **Username:** `teacher` (or whatever you set in `server/.env`)
+   - **Password:** `jeopardy123` (or whatever you set in `server/.env`)
 3. Click **Create New Room** — a 6-character room code will be generated
 4. Read the room code to students
 5. Use the control panel to:

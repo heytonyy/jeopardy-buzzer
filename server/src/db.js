@@ -41,15 +41,15 @@ export function initDb() {
     );
   `);
 
-  // Seed teacher account from env (validated at startup — these will never be undefined)
+  // Always upsert teacher credentials from env so config var changes take effect on restart
   const username = process.env.TEACHER_USERNAME;
   const password = process.env.TEACHER_PASSWORD;
-  const existing = db.prepare('SELECT id FROM teachers WHERE username = ?').get(username);
-  if (!existing) {
-    const hash = bcrypt.hashSync(password, 10);
-    db.prepare('INSERT INTO teachers (username, password_hash) VALUES (?, ?)').run(username, hash);
-    console.log(`Teacher account created: ${username}`);
-  }
+  const hash = bcrypt.hashSync(password, 10);
+  db.prepare(`
+    INSERT INTO teachers (username, password_hash) VALUES (?, ?)
+    ON CONFLICT(username) DO UPDATE SET password_hash = excluded.password_hash
+  `).run(username, hash);
+  console.log(`Teacher account upserted: ${username}`);
 
   console.log('Database initialized');
 }

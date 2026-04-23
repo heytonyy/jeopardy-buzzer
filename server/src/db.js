@@ -41,6 +41,11 @@ export function initDb() {
     );
   `);
 
+  // Migrate: add points column if not present (safe on fresh and existing DBs)
+  try {
+    db.exec(`ALTER TABLE participants ADD COLUMN points INTEGER NOT NULL DEFAULT 0`);
+  } catch {}
+
   // Always upsert teacher credentials from env so config var changes take effect on restart
   const username = process.env.TEACHER_USERNAME;
   const password = process.env.TEACHER_PASSWORD;

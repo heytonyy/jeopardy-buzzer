@@ -45,6 +45,7 @@ function buildRoomSnapshot(room, participants, state) {
       id: p.id,
       teamName: p.team_name,
       socketId: p.socket_id,
+      points: p.points ?? 0,
     })),
   };
 }
@@ -199,6 +200,23 @@ export function registerSocketHandlers(io) {
 
       const participants = db.prepare('SELECT * FROM participants WHERE room_id = ?').all(r.id);
       broadcastToRoom(r.code, 'room:state', buildRoomSnapshot(r, participants, state));
+    });
+
+    // teacher:points — award or deduct points for a team { participantId, delta }
+    socket.on('teacher:points', ({ participantId, delta }) => {
+      const r = getActiveRoom();
+      if (!r) return;
+      const db = getDb();
+      const participant = db.prepare('SELECT * FROM participants WHERE id = ? AND room_id = ?').get(
+        participantId, r.id
+      );
+      if (!participant) return;
+
+      db.prepare('UPDATE participants SET points = points + ? WHERE id = ?').run(delta, participantId);
+
+      const participants = db.prepare('SELECT * FROM participants WHERE room_id = ?').all(r.id);
+      const updated = participants.map(p => ({ id: p.id, teamName: p.team_name, points: p.points ?? 0 }));
+      broadcastToRoom(r.code, 'points:updated', { participants: updated });
     });
 
     socket.on('disconnect', () => {

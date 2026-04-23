@@ -60,6 +60,10 @@ export default function TeacherGamePage() {
       setSnapshot(prev => prev ? { ...prev, selectedTeam: null } : prev);
     });
 
+    socket.on('points:updated', ({ participants }) => {
+      setSnapshot(prev => prev ? { ...prev, participants } : prev);
+    });
+
     return () => {
       socket.off('room:state');
       socket.off('buzzers:opened');
@@ -68,6 +72,7 @@ export default function TeacherGamePage() {
       socket.off('buzz:ranking');
       socket.off('answer:timer:start');
       socket.off('answer:timer:end');
+      socket.off('points:updated');
       disconnectTeacherSocket();
     };
   }, []);
@@ -205,14 +210,35 @@ export default function TeacherGamePage() {
             ) : (
               <ul className="space-y-2">
                 {participants.map(p => (
-                  <li key={p.id} className="flex items-center justify-between bg-slate-700 rounded-lg px-3 py-2">
-                    <span className="text-sm font-medium">{p.teamName}</span>
-                    <button
-                      onClick={() => socket?.emit('teacher:kick', { participantId: p.id })}
-                      className="text-slate-400 hover:text-red-400 text-xs transition-colors"
-                    >
-                      Kick
-                    </button>
+                  <li key={p.id} className="bg-slate-700 rounded-lg px-3 py-2 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{p.teamName}</span>
+                      <button
+                        onClick={() => socket?.emit('teacher:kick', { participantId: p.id })}
+                        className="text-slate-400 hover:text-red-400 text-xs transition-colors"
+                      >
+                        Kick
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <button
+                        onClick={() => socket?.emit('teacher:points', { participantId: p.id, delta: -100 })}
+                        className="bg-red-700 hover:bg-red-600 text-white text-xs font-bold w-10 h-7 rounded transition-colors"
+                      >
+                        −100
+                      </button>
+                      <span className={`text-sm font-mono font-bold tabular-nums ${
+                        p.points > 0 ? 'text-green-400' : p.points < 0 ? 'text-red-400' : 'text-slate-400'
+                      }`}>
+                        {p.points ?? 0} pts
+                      </span>
+                      <button
+                        onClick={() => socket?.emit('teacher:points', { participantId: p.id, delta: 100 })}
+                        className="bg-green-700 hover:bg-green-600 text-white text-xs font-bold w-10 h-7 rounded transition-colors"
+                      >
+                        +100
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>

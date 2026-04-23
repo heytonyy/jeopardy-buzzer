@@ -77,6 +77,10 @@ export default function ParticipantGamePage() {
       disconnectParticipantSocket();
     });
 
+    socket.on('points:updated', ({ participants }) => {
+      setSnapshot(prev => prev ? { ...prev, participants } : prev);
+    });
+
     return () => {
       socket.off('room:state');
       socket.off('buzzers:opened');
@@ -86,6 +90,7 @@ export default function ParticipantGamePage() {
       socket.off('answer:timer:start');
       socket.off('answer:timer:end');
       socket.off('participant:kicked');
+      socket.off('points:updated');
     };
   }, []);
 
@@ -144,6 +149,10 @@ export default function ParticipantGamePage() {
   const someoneElseTurn = snapshot.selectedTeam && snapshot.selectedTeam !== participant.id;
   const buzzerOpen = snapshot.buzzerState === 'open';
 
+  const myParticipant = (snapshot.participants || []).find(p => p.id === participant.id);
+  const myPoints = myParticipant?.points ?? 0;
+  const leaderboard = [...(snapshot.participants || [])].sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
+
   const timerColor = timer
     ? timer.remaining > 3 ? 'text-green-500' : timer.remaining > 1 ? 'text-yellow-500' : 'text-red-500'
     : 'text-slate-900';
@@ -156,11 +165,18 @@ export default function ParticipantGamePage() {
           <span className="font-bold text-slate-800">{participant.teamName}</span>
           <span className="text-slate-400 text-sm ml-2">· {snapshot.room?.code}</span>
         </div>
-        <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-          buzzerOpen ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
-        }`}>
-          {buzzerOpen ? 'OPEN' : 'CLOSED'}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={`text-sm font-mono font-bold tabular-nums ${
+            myPoints > 0 ? 'text-green-600' : myPoints < 0 ? 'text-red-500' : 'text-slate-400'
+          }`}>
+            {myPoints} pts
+          </span>
+          <span className={`text-xs font-bold px-2 py-1 rounded-full ${
+            buzzerOpen ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'
+          }`}>
+            {buzzerOpen ? 'OPEN' : 'CLOSED'}
+          </span>
+        </div>
       </div>
 
       {/* Main content */}
@@ -220,7 +236,7 @@ export default function ParticipantGamePage() {
         {/* Rankings list */}
         {snapshot.rankings && snapshot.rankings.length > 0 && (
           <div className="w-full">
-            <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">Rankings</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">Buzz Order</p>
             <ul className="space-y-1">
               {snapshot.rankings.map((r, i) => (
                 <li
@@ -233,6 +249,32 @@ export default function ParticipantGamePage() {
                 >
                   <span>#{i + 1} {r.teamName}{r.participantId === participant.id ? ' (you)' : ''}</span>
                   <span className="font-mono text-xs">+{(r.delta / 1000).toFixed(2)}s</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Leaderboard */}
+        {leaderboard.length > 0 && (
+          <div className="w-full">
+            <p className="text-xs text-slate-400 uppercase tracking-wider mb-2">Scoreboard</p>
+            <ul className="space-y-1">
+              {leaderboard.map((p, i) => (
+                <li
+                  key={p.id}
+                  className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm ${
+                    p.id === participant.id
+                      ? 'bg-blue-50 font-bold text-blue-700 border border-blue-200'
+                      : 'bg-slate-50 text-slate-600'
+                  }`}
+                >
+                  <span>#{i + 1} {p.teamName}{p.id === participant.id ? ' (you)' : ''}</span>
+                  <span className={`font-mono text-xs font-bold tabular-nums ${
+                    p.points > 0 ? 'text-green-600' : p.points < 0 ? 'text-red-500' : 'text-slate-400'
+                  }`}>
+                    {p.points ?? 0} pts
+                  </span>
                 </li>
               ))}
             </ul>
